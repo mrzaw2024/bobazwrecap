@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video + SRT Merger</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0a0a0f;
+            color: #e5e5e5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: #14141c;
+            border-radius: 24px;
+            padding: 32px;
+            border: 1px solid #2a2a35;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+        .drop-zone {
+            border: 2px dashed #2a2a3a;
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #0f0f17;
+        }
+        .drop-zone:hover {
+            border-color: #60a5fa;
+            background: #181825;
+        }
+        .drop-zone.dragover {
+            border-color: #a78bfa;
+            background: #1a1a2e;
+        }
+        .drop-zone .icon { font-size: 48px; margin-bottom: 12px; }
+        .drop-zone p { color: #aaa; font-size: 14px; }
+        .drop-zone .hint { color: #666; font-size: 12px; margin-top: 8px; }
+        .file-list { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1a1a26;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #2a2a3a;
+        }
+        .file-item .name { font-size: 14px; font-weight: 600; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-item .size { font-size: 12px; color: #888; }
+        .file-item .remove { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 0 8px; }
+        .file-item .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 10px; border-radius: 20px; background: #2a2a3a; color: #aaa; }
+        .file-item .badge.video { background: #3b82f6; color: white; }
+        .file-item .badge.srt { background: #8b5cf6; color: white; }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 24px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+        }
+        .btn:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 8px 30px rgba(59,130,246,0.3); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .btn.secondary { background: #2a2a3a; color: #aaa; }
+        .btn.secondary:hover:not(:disabled) { background: #3a3a4a; }
+        .progress-container { margin-top: 20px; display: none; }
+        .progress-bar { width: 100%; height: 6px; background: #1a1a26; border-radius: 10px; overflow: hidden; margin-top: 8px; }
+        .progress-bar .fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); width: 0%; border-radius: 10px; transition: width 0.3s ease; }
+        .progress-text { font-size: 13px; color: #888; margin-top: 8px; text-align: center; }
+        .result { margin-top: 24px; display: none; }
+        .result video { width: 100%; border-radius: 16px; background: #000; max-height: 400px; }
+        .result .download-btn {
+            display: inline-block;
+            width: 100%;
+            padding: 14px;
+            background: #22c55e;
+            color: white;
+            text-align: center;
+            border-radius: 14px;
+            font-weight: 800;
+            text-decoration: none;
+            margin-top: 12px;
+            transition: all 0.3s ease;
+        }
+        .result .download-btn:hover { transform: scale(1.02); box-shadow: 0 8px 30px rgba(34,197,94,0.3); }
+        .note {
+            margin-top: 20px;
+            padding: 14px 18px;
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #2a2a4a;
+            font-size: 13px;
+            color: #888;
+            line-height: 1.6;
+        }
+        .note strong { color: #ccc; }
+        .note code { background: #0a0a12; padding: 2px 8px; border-radius: 6px; font-size: 12px; color: #a78bfa; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎬 Video + SRT Merger</h1>
+    <p class="subtitle">Video နဲ့ SRT ဖိုင်ကို ပေါင်းပြီး တစ်ခုတည်းသော Video ဖန်တီးပါ</p>
+
+    <div class="drop-zone" id="dropZone">
+        <div class="icon">📂</div>
+        <p>Video နှင့် SRT ဖိုင်များကို ဆွဲချပါ သို့မဟုတ် နှိပ်ပြီး ရွေးပါ</p>
+        <p class="hint">MP4, MOV, AVI, MKV + SRT, ASS, VTT</p>
+        <input type="file" id="fileInput" multiple accept=".mp4,.mov,.avi,.mkv,.webm,.srt,.ass,.vtt" style="display:none">
+    </div>
+
+    <div class="file-list" id="fileList"></div>
+
+    <button class="btn" id="mergeBtn" disabled>🚀 Video + SRT ပေါင်းမည်</button>
+    <button class="btn secondary" id="resetBtn" style="margin-top:10px;">🔄 အားလုံးဖျက်မည်</button>
+
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">စတင်နေပါပြီ...</div>
+    </div>
+
+    <div class="result" id="resultContainer">
+        <video id="resultVideo" controls></video>
+        <a href="#" id="downloadBtn" class="download-btn" download="merged_video.mp4">⬇️ Download Video</a>
+    </div>
+
+    <div class="note">
+        <strong>📌 အလုပ်လုပ်ပုံ</strong><br>
+        • Video နဲ့ SRT ဖိုင်ကို ရွေးပါ<br>
+        • "Video + SRT ပေါင်းမည်" ကိုနှိပ်ပါ<br>
+        • SRT ပါဝင်တဲ့ Video အသစ်ကို Download ရယူပါ<br>
+        <br>
+        <strong>⚙️ နည်းပညာ</strong><br>
+        <code>FFmpeg</code> ကို Browser ထဲမှာပဲ သုံးပြီး ပေါင်းပေးပါတယ်။ အင်တာနက်မလိုဘူး။
+    </div>
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "@ffmpeg/ffmpeg": "https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js",
+        "@ffmpeg/core": "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js"
+    }
+}
+</script>
+
+<script type="module">
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { toBlobURL } from '@ffmpeg/util';
+
+const state = { videoFile: null, subtitleFile: null, videoUrl: null, subtitleContent: null };
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const mergeBtn = document.getElementById('mergeBtn');
+const resetBtn = document.getElementById('resetBtn');
+const progressContainer = document.getElementById('progressContainer');
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+const resultContainer = document.getElementById('resultContainer');
+const resultVideo = document.getElementById('resultVideo');
+const downloadBtn = document.getElementById('downloadBtn');
+
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function getFileExtension(filename) { return filename.split('.').pop().toLowerCase(); }
+function isVideoFile(filename) { return ['mp4','mov','avi','mkv','webm'].includes(getFileExtension(filename)); }
+function isSubtitleFile(filename) { return ['srt','ass','vtt','ssa'].includes(getFileExtension(filename)); }
+
+function updateUI() {
+    fileList.innerHTML = '';
+    let hasVideo = false, hasSubtitle = false;
+
+    if (state.videoFile) {
+        hasVideo = true;
+        const div = document.createElement('div');
+        div.className = 'file-item';
+        div.innerHTML = `
+            <span class="badge video">VIDEO</span>
+            <span class="name">${state.videoFile.name}</span>
+            <span class="size">${formatSize(state.videoFile.size)}</span>
+            <button class="remove" data-type="video">✕</button>
+        `;
+        div.querySelector('.remove').addEventListener('click', () => {
+            URL.revokeObjectURL(state.videoUrl);
+            state.videoFile = null;
+            state.videoUrl = null;
+            updateUI();
+        });
+        fileList.appendChild(div);
+    }
+
+    if (state.subtitleFile) {
+        hasSubtitle = true;
+        const div = document.createElement('div');
+        div.className = 'file-item';
+        div.innerHTML = `
+            <span class="badge srt">SUBTITLE</span>
+            <span class="name">${state.subtitleFile.name}</span>
+            <span class="size">${formatSize(state.subtitleFile.size)}</span>
+            <button class="remove" data-type="subtitle">✕</button>
+        `;
+        div.querySelector('.remove').addEventListener('click', () => {
+            state.subtitleFile = null;
+            state.subtitleContent = null;
+            updateUI();
+        });
+        fileList.appendChild(div);
+    }
+
+    mergeBtn.disabled = !(hasVideo && hasSubtitle);
+}
+
+async function handleFiles(files) {
+    for (const file of files) {
+        if (isVideoFile(file.name) && !state.videoFile) {
+            state.videoFile = file;
+            state.videoUrl = URL.createObjectURL(file);
+        } else if (isSubtitleFile(file.name) && !state.subtitleFile) {
+            state.subtitleFile = file;
+            state.subtitleContent = await file.text();
+        } else if (isVideoFile(file.name) && state.videoFile) {
+            alert('Video ဖိုင် တစ်ခုသာ ရွေးလို့ရပါတယ်။');
+        } else if (isSubtitleFile(file.name) && state.subtitleFile) {
+            alert('Subtitle ဖိုင် တစ်ခုသာ ရွေးလို့ရပါတယ်။');
+        } else {
+            alert(`"${file.name}" ကို မထောက်ပံ့ပါဘူး။`);
+        }
+    }
+    updateUI();
+}
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', () => {
+    handleFiles(fileInput.files);
+    fileInput.value = '';
+});
+
+resetBtn.addEventListener('click', () => {
+    if (state.videoUrl) URL.revokeObjectURL(state.videoUrl);
+    state.videoFile = null; state.videoUrl = null;
+    state.subtitleFile = null; state.subtitleContent = null;
+    resultContainer.style.display = 'none';
+    progressContainer.style.display = 'none';
+    resultVideo.src = '';
+    downloadBtn.href = '#';
+    updateUI();
+});
+
+mergeBtn.addEventListener('click', async () => {
+    if (!state.videoFile || !state.subtitleContent) {
+        alert('Video နဲ့ Subtitle ဖိုင် နှစ်ခုလုံး ရွေးပါ။');
+        return;
+    }
+
+    mergeBtn.disabled = true;
+    mergeBtn.textContent = '⏳ ပေါင်းနေပါပြီ...';
+    progressContainer.style.display = 'block';
+    resultContainer.style.display = 'none';
+    progressFill.style.width = '0%';
+    progressText.textContent = 'FFmpeg ကို စတင်နေပါပြီ...';
+
+    try {
+        progressText.textContent = 'FFmpeg Engine ကို ဆွဲတင်နေပါပြီ (၂၅MB ခန့်)...';
+        progressFill.style.width = '10%';
+
+        const ffmpeg = new FFmpeg();
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+        await ffmpeg.load({
+            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        });
+
+        progressText.textContent = 'ဖိုင်များကို Memory ထဲသို့ ကူးနေပါပြီ...';
+        progressFill.style.width = '30%';
+
+        const videoData = await state.videoFile.arrayBuffer();
+        ffmpeg.FS('writeFile', 'input.mp4', new Uint8Array(videoData));
+
+        const subtitleData = new TextEncoder().encode(state.subtitleContent);
+        ffmpeg.FS('writeFile', 'subtitle.srt', subtitleData);
+
+        progressText.textContent = 'Video နဲ့ Subtitle ကို ပေါင်းနေပါပြီ (ခဏစောင့်ပါ)...';
+        progressFill.style.width = '50%';
+
+        await ffmpeg.exec([
+            '-i', 'input.mp4',
+            '-i', 'subtitle.srt',
+            '-c:v', 'libx264',
+            '-c:a', 'aac',
+            '-movflags', '+faststart',
+            '-preset', 'ultrafast',
+            '-crf', '23',
+            '-map', '0:v',
+            '-map', '0:a?',
+            '-map', '1',
+            '-c:s', 'mov_text',
+            '-metadata:s:s:0', 'language=my',
+            'output.mp4'
+        ]);
+
+        progressText.textContent = 'Video ကို ထုတ်ယူနေပါပြီ...';
+        progressFill.style.width = '85%';
+
+        const data = ffmpeg.FS('readFile', 'output.mp4');
+        const blob = new Blob([data.buffer], { type: 'video/mp4' });
+        const url = URL.createObjectURL(blob);
+
+        progressFill.style.width = '100%';
+        progressText.textContent = '✅ ပေါင်းပြီးပါပြီ!';
+        resultContainer.style.display = 'block';
+        resultVideo.src = url;
+        downloadBtn.href = url;
+        downloadBtn.download = `merged_${state.videoFile.name}`;
+
+        ffmpeg.FS('unlink', 'input.mp4');
+        ffmpeg.FS('unlink', 'subtitle.srt');
+        ffmpeg.FS('unlink', 'output.mp4');
+
+    } catch (error) {
+        console.error('Error:', error);
+        progressText.textContent = '❌ အမှားတစ်ခုဖြစ်နေပါတယ်: ' + error.message;
+        progressFill.style.width = '100%';
+        progressFill.style.background = '#ef4444';
+        alert('ပေါင်းခြင်း မအောင်မြင်ပါဘူး။\n' + error.message);
+    } finally {
+        mergeBtn.disabled = false;
+        mergeBtn.textContent = '🚀 Video + SRT ပေါင်းမည်';
+        setTimeout(() => {
+            progressFill.style.background = 'linear-gradient(90deg, #3b82f6, #8b5cf6)';
+        }, 3000);
+    }
+});
+
+updateUI();
+</script>
+</body>
+</html>

@@ -47,16 +47,15 @@
         .upload-btn {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 16px 20px;
+            gap: 12px;
+            padding: 14px 18px;
             border-radius: 14px;
             border: 2px dashed #2a2a3a;
             background: #0f0f17;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 600;
             color: #e5e5e5;
         }
         .upload-btn:hover {
@@ -73,30 +72,36 @@
             border-radius: 20px;
             background: #2a2a3a;
             color: #aaa;
+            flex-shrink: 0;
         }
         .upload-btn .badge.video { background: #3b82f6; color: white; }
         .upload-btn .badge.srt { background: #8b5cf6; color: white; }
         .upload-btn input[type="file"] { display: none; }
-        .file-name {
-            font-size: 13px;
-            color: #888;
-            margin-left: 8px;
-            max-width: 200px;
+        .upload-btn .file-info {
+            flex: 1;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            color: #aaa;
+        }
+        .upload-btn .file-info.loaded { color: #4ade80; }
+        .upload-btn .file-size {
+            font-size: 12px;
+            color: #666;
+            flex-shrink: 0;
         }
         .file-status {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 12px;
+            padding: 10px 14px;
             border-radius: 10px;
             font-size: 13px;
+            margin-bottom: 6px;
         }
         .file-status .icon { font-size: 18px; }
-        .file-status.loaded { background: #1a2a1a; color: #4ade80; }
-        .file-status.empty { background: #1a1a1a; color: #666; }
+        .file-status.loaded { background: #1a2a1a; color: #4ade80; border: 1px solid #2a4a2a; }
+        .file-status.empty { background: #1a1a1a; color: #666; border: 1px solid #2a2a2a; }
         .btn {
             width: 100%;
             padding: 16px;
@@ -157,15 +162,15 @@
     <div class="upload-section">
         <label class="upload-btn video" id="videoBtn">
             <span class="badge video">VIDEO</span>
-            <span id="videoLabel">ဗီဒီယိုဖိုင် ရွေးပါ</span>
-            <span class="file-name" id="videoName"></span>
+            <span class="file-info" id="videoInfo">ဗီဒီယိုဖိုင် ရွေးပါ</span>
+            <span class="file-size" id="videoSize"></span>
             <input type="file" id="videoInput" accept=".mp4,.mov,.avi,.mkv,.webm">
         </label>
 
         <label class="upload-btn srt" id="srtBtn">
             <span class="badge srt">SRT</span>
-            <span id="srtLabel">စာတန်းဖိုင် ရွေးပါ</span>
-            <span class="file-name" id="srtName"></span>
+            <span class="file-info" id="srtInfo">စာတန်းဖိုင် ရွေးပါ</span>
+            <span class="file-size" id="srtSize"></span>
             <input type="file" id="srtInput" accept=".srt,.ass,.vtt">
         </label>
     </div>
@@ -212,10 +217,10 @@ const state = { videoFile: null, subtitleFile: null, subtitleContent: null };
 
 const videoInput = document.getElementById('videoInput');
 const srtInput = document.getElementById('srtInput');
-const videoLabel = document.getElementById('videoLabel');
-const srtLabel = document.getElementById('srtLabel');
-const videoName = document.getElementById('videoName');
-const srtName = document.getElementById('srtName');
+const videoInfo = document.getElementById('videoInfo');
+const srtInfo = document.getElementById('srtInfo');
+const videoSize = document.getElementById('videoSize');
+const srtSize = document.getElementById('srtSize');
 const statusVideo = document.getElementById('statusVideo');
 const statusSrt = document.getElementById('statusSrt');
 const mergeBtn = document.getElementById('mergeBtn');
@@ -236,26 +241,30 @@ function formatSize(bytes) {
 function updateUI() {
     // Video
     if (state.videoFile) {
-        videoLabel.textContent = '✅ ရွေးပြီးပါပြီ';
-        videoName.textContent = `${state.videoFile.name} (${formatSize(state.videoFile.size)})`;
+        videoInfo.textContent = state.videoFile.name;
+        videoInfo.className = 'file-info loaded';
+        videoSize.textContent = formatSize(state.videoFile.size);
         statusVideo.className = 'file-status loaded';
         statusVideo.innerHTML = `<span class="icon">✅</span> ${state.videoFile.name}`;
     } else {
-        videoLabel.textContent = 'ဗီဒီယိုဖိုင် ရွေးပါ';
-        videoName.textContent = '';
+        videoInfo.textContent = 'ဗီဒီယိုဖိုင် ရွေးပါ';
+        videoInfo.className = 'file-info';
+        videoSize.textContent = '';
         statusVideo.className = 'file-status empty';
         statusVideo.innerHTML = '<span class="icon">⏳</span> Video မရွေးရသေးပါ';
     }
 
     // SRT
     if (state.subtitleFile) {
-        srtLabel.textContent = '✅ ရွေးပြီးပါပြီ';
-        srtName.textContent = `${state.subtitleFile.name} (${formatSize(state.subtitleFile.size)})`;
+        srtInfo.textContent = state.subtitleFile.name;
+        srtInfo.className = 'file-info loaded';
+        srtSize.textContent = formatSize(state.subtitleFile.size);
         statusSrt.className = 'file-status loaded';
         statusSrt.innerHTML = `<span class="icon">✅</span> ${state.subtitleFile.name}`;
     } else {
-        srtLabel.textContent = 'စာတန်းဖိုင် ရွေးပါ';
-        srtName.textContent = '';
+        srtInfo.textContent = 'စာတန်းဖိုင် ရွေးပါ';
+        srtInfo.className = 'file-info';
+        srtSize.textContent = '';
         statusSrt.className = 'file-status empty';
         statusSrt.innerHTML = '<span class="icon">⏳</span> SRT မရွေးရသေးပါ';
     }
@@ -264,8 +273,8 @@ function updateUI() {
 }
 
 // Video Input
-videoInput.addEventListener('change', async () => {
-    const file = videoInput.files[0];
+videoInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
     if (file) {
         state.videoFile = file;
         updateUI();
@@ -274,8 +283,8 @@ videoInput.addEventListener('change', async () => {
 });
 
 // SRT Input
-srtInput.addEventListener('change', async () => {
-    const file = srtInput.files[0];
+srtInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
     if (file) {
         state.subtitleFile = file;
         state.subtitleContent = await file.text();

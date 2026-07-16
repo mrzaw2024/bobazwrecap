@@ -17,7 +17,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 700px;
+            max-width: 600px;
             width: 100%;
             background: #14141c;
             border-radius: 24px;
@@ -38,51 +38,65 @@
             font-size: 14px;
             margin-bottom: 28px;
         }
-        .drop-zone {
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .upload-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 20px;
+            border-radius: 14px;
             border: 2px dashed #2a2a3a;
-            border-radius: 16px;
-            padding: 40px 20px;
-            text-align: center;
+            background: #0f0f17;
             cursor: pointer;
             transition: all 0.3s ease;
-            background: #0f0f17;
-            position: relative;
+            font-size: 16px;
+            font-weight: 700;
+            color: #e5e5e5;
         }
-        .drop-zone:hover {
+        .upload-btn:hover {
             border-color: #60a5fa;
             background: #181825;
         }
-        .drop-zone.dragover {
-            border-color: #a78bfa;
-            background: #1a1a2e;
+        .upload-btn.video:hover { border-color: #3b82f6; }
+        .upload-btn.srt:hover { border-color: #8b5cf6; }
+        .upload-btn .badge {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: #2a2a3a;
+            color: #aaa;
         }
-        .drop-zone .icon { font-size: 48px; margin-bottom: 12px; pointer-events: none; }
-        .drop-zone p { color: #aaa; font-size: 14px; pointer-events: none; }
-        .drop-zone .hint { color: #666; font-size: 12px; margin-top: 8px; pointer-events: none; }
-        .drop-zone input[type="file"] {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
+        .upload-btn .badge.video { background: #3b82f6; color: white; }
+        .upload-btn .badge.srt { background: #8b5cf6; color: white; }
+        .upload-btn input[type="file"] { display: none; }
+        .file-name {
+            font-size: 13px;
+            color: #888;
+            margin-left: 8px;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
-        .file-list { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .file-item {
+        .file-status {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            background: #1a1a26;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 1px solid #2a2a3a;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 13px;
         }
-        .file-item .name { font-size: 14px; font-weight: 600; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .file-item .size { font-size: 12px; color: #888; }
-        .file-item .remove { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 0 8px; }
-        .file-item .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 10px; border-radius: 20px; background: #2a2a3a; color: #aaa; }
-        .file-item .badge.video { background: #3b82f6; color: white; }
-        .file-item .badge.srt { background: #8b5cf6; color: white; }
+        .file-status .icon { font-size: 18px; }
+        .file-status.loaded { background: #1a2a1a; color: #4ade80; }
+        .file-status.empty { background: #1a1a1a; color: #666; }
         .btn {
             width: 100%;
             padding: 16px;
@@ -92,13 +106,13 @@
             font-weight: 800;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 24px;
+            margin-top: 16px;
             background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             color: white;
         }
         .btn:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 8px 30px rgba(59,130,246,0.3); }
         .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-        .btn.secondary { background: #2a2a3a; color: #aaa; }
+        .btn.secondary { background: #2a2a3a; color: #aaa; margin-top: 8px; }
         .btn.secondary:hover:not(:disabled) { background: #3a3a4a; }
         .progress-container { margin-top: 20px; display: none; }
         .progress-bar { width: 100%; height: 6px; background: #1a1a26; border-radius: 10px; overflow: hidden; margin-top: 8px; }
@@ -139,17 +153,29 @@
     <h1>🎬 Video + SRT Merger</h1>
     <p class="subtitle">Video နဲ့ SRT ဖိုင်ကို ပေါင်းပြီး တစ်ခုတည်းသော Video ဖန်တီးပါ</p>
 
-    <div class="drop-zone" id="dropZone">
-        <div class="icon">📂</div>
-        <p>Video နှင့် SRT ဖိုင်များကို နှိပ်ပြီး ရွေးပါ</p>
-        <p class="hint">MP4, MOV, AVI, MKV + SRT, ASS, VTT</p>
-        <input type="file" id="fileInput" multiple accept=".mp4,.mov,.avi,.mkv,.webm,.srt,.ass,.vtt">
+    <!-- Upload Section -->
+    <div class="upload-section">
+        <label class="upload-btn video" id="videoBtn">
+            <span class="badge video">VIDEO</span>
+            <span id="videoLabel">ဗီဒီယိုဖိုင် ရွေးပါ</span>
+            <span class="file-name" id="videoName"></span>
+            <input type="file" id="videoInput" accept=".mp4,.mov,.avi,.mkv,.webm">
+        </label>
+
+        <label class="upload-btn srt" id="srtBtn">
+            <span class="badge srt">SRT</span>
+            <span id="srtLabel">စာတန်းဖိုင် ရွေးပါ</span>
+            <span class="file-name" id="srtName"></span>
+            <input type="file" id="srtInput" accept=".srt,.ass,.vtt">
+        </label>
     </div>
 
-    <div class="file-list" id="fileList"></div>
+    <!-- Status -->
+    <div id="statusVideo" class="file-status empty"><span class="icon">⏳</span> Video မရွေးရသေးပါ</div>
+    <div id="statusSrt" class="file-status empty"><span class="icon">⏳</span> SRT မရွေးရသေးပါ</div>
 
     <button class="btn" id="mergeBtn" disabled>🚀 Video + SRT ပေါင်းမည်</button>
-    <button class="btn secondary" id="resetBtn" style="margin-top:10px;">🔄 အားလုံးဖျက်မည်</button>
+    <button class="btn secondary" id="resetBtn">🔄 အားလုံးဖျက်မည်</button>
 
     <div class="progress-container" id="progressContainer">
         <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
@@ -165,10 +191,7 @@
         <strong>📌 အလုပ်လုပ်ပုံ</strong><br>
         • Video နဲ့ SRT ဖိုင်ကို ရွေးပါ<br>
         • "Video + SRT ပေါင်းမည်" ကိုနှိပ်ပါ<br>
-        • SRT ပါဝင်တဲ့ Video အသစ်ကို Download ရယူပါ<br>
-        <br>
-        <strong>⚙️ နည်းပညာ</strong><br>
-        <code>FFmpeg</code> ကို Browser ထဲမှာပဲ သုံးပြီး ပေါင်းပေးပါတယ်။ အင်တာနက်မလိုဘူး။
+        • SRT ပါဝင်တဲ့ Video အသစ်ကို Download ရယူပါ
     </div>
 </div>
 
@@ -185,11 +208,16 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { toBlobURL } from '@ffmpeg/util';
 
-const state = { videoFile: null, subtitleFile: null, videoUrl: null, subtitleContent: null };
+const state = { videoFile: null, subtitleFile: null, subtitleContent: null };
 
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
-const fileList = document.getElementById('fileList');
+const videoInput = document.getElementById('videoInput');
+const srtInput = document.getElementById('srtInput');
+const videoLabel = document.getElementById('videoLabel');
+const srtLabel = document.getElementById('srtLabel');
+const videoName = document.getElementById('videoName');
+const srtName = document.getElementById('srtName');
+const statusVideo = document.getElementById('statusVideo');
+const statusSrt = document.getElementById('statusSrt');
 const mergeBtn = document.getElementById('mergeBtn');
 const resetBtn = document.getElementById('resetBtn');
 const progressContainer = document.getElementById('progressContainer');
@@ -205,111 +233,62 @@ function formatSize(bytes) {
     return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
-function getFileExtension(filename) { return filename.split('.').pop().toLowerCase(); }
-function isVideoFile(filename) { return ['mp4','mov','avi','mkv','webm'].includes(getFileExtension(filename)); }
-function isSubtitleFile(filename) { return ['srt','ass','vtt','ssa'].includes(getFileExtension(filename)); }
-
 function updateUI() {
-    fileList.innerHTML = '';
-    let hasVideo = false, hasSubtitle = false;
-
+    // Video
     if (state.videoFile) {
-        hasVideo = true;
-        const div = document.createElement('div');
-        div.className = 'file-item';
-        div.innerHTML = `
-            <span class="badge video">VIDEO</span>
-            <span class="name">${state.videoFile.name}</span>
-            <span class="size">${formatSize(state.videoFile.size)}</span>
-            <button class="remove" data-type="video">✕</button>
-        `;
-        div.querySelector('.remove').addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (state.videoUrl) URL.revokeObjectURL(state.videoUrl);
-            state.videoFile = null;
-            state.videoUrl = null;
-            updateUI();
-        });
-        fileList.appendChild(div);
+        videoLabel.textContent = '✅ ရွေးပြီးပါပြီ';
+        videoName.textContent = `${state.videoFile.name} (${formatSize(state.videoFile.size)})`;
+        statusVideo.className = 'file-status loaded';
+        statusVideo.innerHTML = `<span class="icon">✅</span> ${state.videoFile.name}`;
+    } else {
+        videoLabel.textContent = 'ဗီဒီယိုဖိုင် ရွေးပါ';
+        videoName.textContent = '';
+        statusVideo.className = 'file-status empty';
+        statusVideo.innerHTML = '<span class="icon">⏳</span> Video မရွေးရသေးပါ';
     }
 
+    // SRT
     if (state.subtitleFile) {
-        hasSubtitle = true;
-        const div = document.createElement('div');
-        div.className = 'file-item';
-        div.innerHTML = `
-            <span class="badge srt">SUBTITLE</span>
-            <span class="name">${state.subtitleFile.name}</span>
-            <span class="size">${formatSize(state.subtitleFile.size)}</span>
-            <button class="remove" data-type="subtitle">✕</button>
-        `;
-        div.querySelector('.remove').addEventListener('click', (e) => {
-            e.stopPropagation();
-            state.subtitleFile = null;
-            state.subtitleContent = null;
-            updateUI();
-        });
-        fileList.appendChild(div);
+        srtLabel.textContent = '✅ ရွေးပြီးပါပြီ';
+        srtName.textContent = `${state.subtitleFile.name} (${formatSize(state.subtitleFile.size)})`;
+        statusSrt.className = 'file-status loaded';
+        statusSrt.innerHTML = `<span class="icon">✅</span> ${state.subtitleFile.name}`;
+    } else {
+        srtLabel.textContent = 'စာတန်းဖိုင် ရွေးပါ';
+        srtName.textContent = '';
+        statusSrt.className = 'file-status empty';
+        statusSrt.innerHTML = '<span class="icon">⏳</span> SRT မရွေးရသေးပါ';
     }
 
-    mergeBtn.disabled = !(hasVideo && hasSubtitle);
+    mergeBtn.disabled = !(state.videoFile && state.subtitleFile);
 }
 
-async function handleFiles(files) {
-    for (const file of files) {
-        if (isVideoFile(file.name) && !state.videoFile) {
-            state.videoFile = file;
-            state.videoUrl = URL.createObjectURL(file);
-        } else if (isSubtitleFile(file.name) && !state.subtitleFile) {
-            state.subtitleFile = file;
-            state.subtitleContent = await file.text();
-        } else if (isVideoFile(file.name) && state.videoFile) {
-            alert('Video ဖိုင် တစ်ခုသာ ရွေးလို့ရပါတယ်။');
-        } else if (isSubtitleFile(file.name) && state.subtitleFile) {
-            alert('Subtitle ဖိုင် တစ်ခုသာ ရွေးလို့ရပါတယ်။');
-        } else {
-            alert(`"${file.name}" ကို မထောက်ပံ့ပါဘူး။`);
-        }
+// Video Input
+videoInput.addEventListener('change', async () => {
+    const file = videoInput.files[0];
+    if (file) {
+        state.videoFile = file;
+        updateUI();
     }
-    updateUI();
-}
-
-// File input change
-fileInput.addEventListener('change', () => {
-    if (fileInput.files.length > 0) {
-        handleFiles(fileInput.files);
-    }
-    fileInput.value = '';
+    videoInput.value = '';
 });
 
-// Drop zone click - trigger file input
-dropZone.addEventListener('click', (e) => {
-    // Don't trigger if click is on remove button
-    if (e.target.closest('.remove')) return;
-    fileInput.click();
-});
-
-// Drag and drop
-dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-});
-dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('dragover');
-});
-dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    if (e.dataTransfer.files.length > 0) {
-        handleFiles(e.dataTransfer.files);
+// SRT Input
+srtInput.addEventListener('change', async () => {
+    const file = srtInput.files[0];
+    if (file) {
+        state.subtitleFile = file;
+        state.subtitleContent = await file.text();
+        updateUI();
     }
+    srtInput.value = '';
 });
 
 // Reset
 resetBtn.addEventListener('click', () => {
-    if (state.videoUrl) URL.revokeObjectURL(state.videoUrl);
-    state.videoFile = null; state.videoUrl = null;
-    state.subtitleFile = null; state.subtitleContent = null;
+    state.videoFile = null;
+    state.subtitleFile = null;
+    state.subtitleContent = null;
     resultContainer.style.display = 'none';
     progressContainer.style.display = 'none';
     resultVideo.src = '';

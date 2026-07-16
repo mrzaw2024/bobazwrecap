@@ -46,6 +46,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             background: #0f0f17;
+            position: relative;
         }
         .drop-zone:hover {
             border-color: #60a5fa;
@@ -55,9 +56,17 @@
             border-color: #a78bfa;
             background: #1a1a2e;
         }
-        .drop-zone .icon { font-size: 48px; margin-bottom: 12px; }
-        .drop-zone p { color: #aaa; font-size: 14px; }
-        .drop-zone .hint { color: #666; font-size: 12px; margin-top: 8px; }
+        .drop-zone .icon { font-size: 48px; margin-bottom: 12px; pointer-events: none; }
+        .drop-zone p { color: #aaa; font-size: 14px; pointer-events: none; }
+        .drop-zone .hint { color: #666; font-size: 12px; margin-top: 8px; pointer-events: none; }
+        .drop-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
         .file-list { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
         .file-item {
             display: flex;
@@ -132,9 +141,9 @@
 
     <div class="drop-zone" id="dropZone">
         <div class="icon">📂</div>
-        <p>Video နှင့် SRT ဖိုင်များကို ဆွဲချပါ သို့မဟုတ် နှိပ်ပြီး ရွေးပါ</p>
+        <p>Video နှင့် SRT ဖိုင်များကို နှိပ်ပြီး ရွေးပါ</p>
         <p class="hint">MP4, MOV, AVI, MKV + SRT, ASS, VTT</p>
-        <input type="file" id="fileInput" multiple accept=".mp4,.mov,.avi,.mkv,.webm,.srt,.ass,.vtt" style="display:none">
+        <input type="file" id="fileInput" multiple accept=".mp4,.mov,.avi,.mkv,.webm,.srt,.ass,.vtt">
     </div>
 
     <div class="file-list" id="fileList"></div>
@@ -214,8 +223,9 @@ function updateUI() {
             <span class="size">${formatSize(state.videoFile.size)}</span>
             <button class="remove" data-type="video">✕</button>
         `;
-        div.querySelector('.remove').addEventListener('click', () => {
-            URL.revokeObjectURL(state.videoUrl);
+        div.querySelector('.remove').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (state.videoUrl) URL.revokeObjectURL(state.videoUrl);
             state.videoFile = null;
             state.videoUrl = null;
             updateUI();
@@ -233,7 +243,8 @@ function updateUI() {
             <span class="size">${formatSize(state.subtitleFile.size)}</span>
             <button class="remove" data-type="subtitle">✕</button>
         `;
-        div.querySelector('.remove').addEventListener('click', () => {
+        div.querySelector('.remove').addEventListener('click', (e) => {
+            e.stopPropagation();
             state.subtitleFile = null;
             state.subtitleContent = null;
             updateUI();
@@ -263,19 +274,38 @@ async function handleFiles(files) {
     updateUI();
 }
 
-dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    handleFiles(e.dataTransfer.files);
-});
+// File input change
 fileInput.addEventListener('change', () => {
-    handleFiles(fileInput.files);
+    if (fileInput.files.length > 0) {
+        handleFiles(fileInput.files);
+    }
     fileInput.value = '';
 });
 
+// Drop zone click - trigger file input
+dropZone.addEventListener('click', (e) => {
+    // Don't trigger if click is on remove button
+    if (e.target.closest('.remove')) return;
+    fileInput.click();
+});
+
+// Drag and drop
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+});
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length > 0) {
+        handleFiles(e.dataTransfer.files);
+    }
+});
+
+// Reset
 resetBtn.addEventListener('click', () => {
     if (state.videoUrl) URL.revokeObjectURL(state.videoUrl);
     state.videoFile = null; state.videoUrl = null;
@@ -287,6 +317,7 @@ resetBtn.addEventListener('click', () => {
     updateUI();
 });
 
+// Merge
 mergeBtn.addEventListener('click', async () => {
     if (!state.videoFile || !state.subtitleContent) {
         alert('Video နဲ့ Subtitle ဖိုင် နှစ်ခုလုံး ရွေးပါ။');

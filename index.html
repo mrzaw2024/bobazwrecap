@@ -48,7 +48,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 14px 18px;
+            padding: 16px 20px;
             border-radius: 14px;
             border: 2px dashed #2a2a3a;
             background: #0f0f17;
@@ -57,6 +57,7 @@
             font-size: 14px;
             font-weight: 600;
             color: #e5e5e5;
+            width: 100%;
         }
         .upload-btn:hover {
             border-color: #60a5fa;
@@ -76,7 +77,6 @@
         }
         .upload-btn .badge.video { background: #3b82f6; color: white; }
         .upload-btn .badge.srt { background: #8b5cf6; color: white; }
-        .upload-btn input[type="file"] { display: none; }
         .upload-btn .file-info {
             flex: 1;
             overflow: hidden;
@@ -151,6 +151,7 @@
         }
         .note strong { color: #ccc; }
         .note code { background: #0a0a12; padding: 2px 8px; border-radius: 6px; font-size: 12px; color: #a78bfa; }
+        .note .highlight { color: #fbbf24; }
     </style>
 </head>
 <body>
@@ -160,18 +161,20 @@
 
     <!-- Upload Section -->
     <div class="upload-section">
+        <!-- Video Button -->
         <label class="upload-btn video" id="videoBtn">
             <span class="badge video">VIDEO</span>
             <span class="file-info" id="videoInfo">ဗီဒီယိုဖိုင် ရွေးပါ</span>
             <span class="file-size" id="videoSize"></span>
-            <input type="file" id="videoInput" accept=".mp4,.mov,.avi,.mkv,.webm">
+            <input type="file" id="videoInput" accept=".mp4,.mov,.avi,.mkv,.webm" style="display:none">
         </label>
 
+        <!-- SRT Button -->
         <label class="upload-btn srt" id="srtBtn">
             <span class="badge srt">SRT</span>
             <span class="file-info" id="srtInfo">စာတန်းဖိုင် ရွေးပါ</span>
             <span class="file-size" id="srtSize"></span>
-            <input type="file" id="srtInput" accept=".srt,.ass,.vtt">
+            <input type="file" id="srtInput" accept=".srt,.ass,.vtt" style="display:none">
         </label>
     </div>
 
@@ -194,8 +197,9 @@
 
     <div class="note">
         <strong>📌 အလုပ်လုပ်ပုံ</strong><br>
-        • Video နဲ့ SRT ဖိုင်ကို ရွေးပါ<br>
-        • "Video + SRT ပေါင်းမည်" ကိုနှိပ်ပါ<br>
+        • <span class="highlight">VIDEO</span> ခလုတ်ကိုနှိပ်ပြီး ဗီဒီယိုဖိုင် ရွေးပါ<br>
+        • <span class="highlight">SRT</span> ခလုတ်ကိုနှိပ်ပြီး စာတန်းဖိုင် ရွေးပါ<br>
+        • နှစ်ခုလုံးရွေးပြီးရင် <span class="highlight">"Video + SRT ပေါင်းမည်"</span> ကိုနှိပ်ပါ<br>
         • SRT ပါဝင်တဲ့ Video အသစ်ကို Download ရယူပါ
     </div>
 </div>
@@ -241,11 +245,11 @@ function formatSize(bytes) {
 function updateUI() {
     // Video
     if (state.videoFile) {
-        videoInfo.textContent = state.videoFile.name;
+        videoInfo.textContent = '✅ ' + state.videoFile.name;
         videoInfo.className = 'file-info loaded';
         videoSize.textContent = formatSize(state.videoFile.size);
         statusVideo.className = 'file-status loaded';
-        statusVideo.innerHTML = `<span class="icon">✅</span> ${state.videoFile.name}`;
+        statusVideo.innerHTML = `<span class="icon">✅</span> ${state.videoFile.name} (${formatSize(state.videoFile.size)})`;
     } else {
         videoInfo.textContent = 'ဗီဒီယိုဖိုင် ရွေးပါ';
         videoInfo.className = 'file-info';
@@ -256,11 +260,11 @@ function updateUI() {
 
     // SRT
     if (state.subtitleFile) {
-        srtInfo.textContent = state.subtitleFile.name;
+        srtInfo.textContent = '✅ ' + state.subtitleFile.name;
         srtInfo.className = 'file-info loaded';
         srtSize.textContent = formatSize(state.subtitleFile.size);
         statusSrt.className = 'file-status loaded';
-        statusSrt.innerHTML = `<span class="icon">✅</span> ${state.subtitleFile.name}`;
+        statusSrt.innerHTML = `<span class="icon">✅</span> ${state.subtitleFile.name} (${formatSize(state.subtitleFile.size)})`;
     } else {
         srtInfo.textContent = 'စာတန်းဖိုင် ရွေးပါ';
         srtInfo.className = 'file-info';
@@ -272,8 +276,8 @@ function updateUI() {
     mergeBtn.disabled = !(state.videoFile && state.subtitleFile);
 }
 
-// Video Input
-videoInput.addEventListener('change', async (e) => {
+// Video Input - ဖိုင်ရွေးပြီးတာနဲ့
+videoInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
         state.videoFile = file;
@@ -282,7 +286,7 @@ videoInput.addEventListener('change', async (e) => {
     videoInput.value = '';
 });
 
-// SRT Input
+// SRT Input - ဖိုင်ရွေးပြီးတာနဲ့
 srtInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
